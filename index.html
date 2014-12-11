@@ -7,7 +7,7 @@
 
 <script type="text/javascript">
 
-var game = new Phaser.Game(800,600, Phaser.AUTO, '', {preload: preload, create: create, update: update});
+var game = new Phaser.Game(800,600, Phaser.AUTO, 'JFHTP', {preload: preload, create: create, update: update});
 
 function preload() {
 	game.load.image('sky','assets/sky.png');
@@ -21,14 +21,16 @@ var cursors;
 
 function create() {
 
-	//Initialize Physics
-	game.physics.startSystem(Phaser.Physics.ARCADE);
+
 
 	//Add tileSprite background
-	game.add.tileSprite(0, 0, 600, 1600, 'sky');
+	game.add.tileSprite(0, 0, 1600, 600, 'sky');
 
 	//Set bounds for camera usage
-	game.world.setBounds(0,0, 600, 1600);
+	game.world.setBounds(0,0, 1600, 600);
+
+		//Initialize Physics
+	game.physics.startSystem(Phaser.Physics.ARCADE);
 
 	
 	//Create platforms
@@ -41,6 +43,7 @@ function create() {
 	ground.body.immovable = true;
 
 	ground = addPlatform(ground, 400, 250);
+	ground = addPlatform(ground, 1000, 300);
 
 	/*ground = platforms.create(400, game.world.height - 250, 'ground');
 
@@ -64,6 +67,9 @@ function create() {
 	//Create controls
 	spaceKey = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
 
+	//Camera
+	game.camera.follow(player);
+
 
 }
 
@@ -74,8 +80,7 @@ function update(){
 	if (player.body.velocity.x > 0) player.animations.play('right');
 	spaceKey.onDown.add(jump, this);
 
-	//Camera
-	game.camera.follow(player);
+	
 
 }
 
