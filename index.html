@@ -15,11 +15,38 @@ function preload() {
     game.load.spritesheet('dude','assets/dude.png',32,48);
 }
 
+var player;
+var platforms;
+var cursors;
+
 function create() {
-	game.add.sprite(0,game.world.height-96,'dude');
+
+	game.physics.startSystem(Phaser.Physics.ARCADE);
+
+	game.add.sprite(0, 0, 'sky');
+
+	platforms = game.add.group();
+
+	platforms.enableBody = true;
+
+	var ground = platforms.create(0, game.world.height - 128, 'ground');
+
+	ground.body.immovable = true;
+
+	player = game.add.sprite(10,game.world.height-400,'dude');
+
+	game.physics.arcade.enable(player);
+
+    player.body.gravity.y = 300;
+
+    player.body.bounce.y = 0.4;
+
+	player.frame = 4;
 }
 
 function update(){
+
+	game.physics.arcade.collide(player, platforms);
 
 }
 
