@@ -7,7 +7,7 @@
 
 <script type="text/javascript">
 
-var game = new Phaser.Game(800,600, Phaser.AUTO, 'JFHTP', {preload: preload, create: create, update: update});
+var game = new Phaser.Game(800,600, Phaser.AUTO, 'JFHTP', {preload: preload, create: create, update: update, render: render});
 
 function preload() {
 	game.load.image('sky','assets/sky.png');
@@ -68,7 +68,9 @@ function create() {
 	spaceKey = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
 
 	//Camera
-	game.camera.follow(player);
+	game.camera.follow(player, Phaser.Camera.FOLLOW_PLATFORMER);
+
+	//win();
 
 
 }
@@ -84,6 +86,9 @@ function update(){
 
 }
 
+function render(){
+}
+
 function playerAccel(x, y){
 	if (player.body.velocity.x < y) player.body.velocity.x += x;
 }
@@ -96,6 +101,15 @@ function addPlatform(ground, x, y){
 
 function jump(){
 	if (player.body.touching.down) player.body.velocity.y -= 300;
+}
+
+function win(){
+	if (player.x)
+	var text = "YOU WIN\n-\nCLICK TO START OVER";
+	var style = {font: "60px Arial", fill: "#ff0044", align: "center"};
+	var t = game.add.text(0,0,text,style);
+	t.fixedToCamera = true;
+	t.cameraOffset.setTo(60,200);
 }
 	
 </script>
