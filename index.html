@@ -17,6 +17,7 @@ function preload() {
 
 var player;
 var platforms;
+var walls;
 var cursors;
 winstate = 0;
 losestate = 0;
@@ -48,6 +49,15 @@ function create() {
 
 	ground = addPlatform(ground, 400, 250);
 	ground = addPlatform(ground, 1000, 300);
+
+	//Create Walls
+	walls = game.add.group();
+	walls.enableBody = true;
+
+	var wall = walls.create(300, game.world.height - 300, 'ground');
+	wall.immovable = true;
+	wall.anchor.setTo(0.5,0.5);
+	wall.rotation = (wall.x,wall.y,Math.PI/2);
 
 	/*ground = platforms.create(400, game.world.height - 250, 'ground');
 
@@ -87,7 +97,8 @@ function update(){
 	punch();
 
 	win();
-	lose();
+	if(player.y > game.world.height )lose();
+	game.physics.arcade.overlap(player, walls, lose, null, this);
 
 	if (winstate == 1 || losestate == 1){ 
 		spaceKey.onDown.add(restart,this);
@@ -139,7 +150,7 @@ function win(){
 }
 
 function lose(){
-	if (player.y > game.world.height && losestate == 0){
+	if (losestate == 0){
 		var text = "YOU LOSE\n-\nCLICK TO START OVER";
 		var style = {font: "60px Arial", fill: "#ff0044", align: "center"};
 		var t = game.add.text(0,0,text,style);
