@@ -18,6 +18,10 @@ function preload() {
 var player;
 var platforms;
 var cursors;
+winstate = 0;
+losestate = 0;
+punching = 0;
+punchTimer = 0;
 
 function create() {
 
@@ -52,6 +56,7 @@ function create() {
 
 	//Create player
 	player = game.add.sprite(10,game.world.height-200,'dude');
+	player.anchor.setTo(0.5,0.5);
 
 	game.physics.arcade.enable(player);
 
@@ -70,8 +75,6 @@ function create() {
 	//Camera
 	game.camera.follow(player, Phaser.Camera.FOLLOW_PLATFORMER);
 
-	//win();
-
 
 }
 
@@ -80,17 +83,22 @@ function update(){
 	game.physics.arcade.collide(player, platforms);
 	playerAccel(2, 200);
 	if (player.body.velocity.x > 0) player.animations.play('right');
-	spaceKey.onDown.add(jump, this);
+	//spaceKey.onDown.add(jump, this);
+	punch();
 
-	
+	win();
+	lose();
 
+	if (winstate == 1 || losestate == 1){ 
+		spaceKey.onDown.add(restart,this);
+	}
 }
 
 function render(){
 }
 
 function playerAccel(x, y){
-	if (player.body.velocity.x < y) player.body.velocity.x += x;
+	if (player.alive && player.body.velocity.x < y) player.body.velocity.x += x;
 }
 
 function addPlatform(ground, x, y){
@@ -100,16 +108,50 @@ function addPlatform(ground, x, y){
 }
 
 function jump(){
-	if (player.body.touching.down) player.body.velocity.y -= 300;
+	if (player.alive && player.body.touching.down) player.body.velocity.y -= 300;
+}
+
+function punch(){
+	if (punching == 0 && spaceKey.isDown && punchTimer == 0){
+		punching = 1; punchTimer = 100; player.anchor.setTo(0,0.5);
+	}else if(punching == 1){
+		player.scale.x+=.1;
+		if (player.scale.x >= 1.5) punching = 2;
+	}else if (punching == 2){
+		player.scale.x-=.1;
+		if (player.scale.x <= 1){
+			player.scale.x = 1; punching = 0; player.anchor.setTo(0.5,0.5);
+		}
+	}
+	if (punchTimer > 0) punchTimer--;
 }
 
 function win(){
-	if (player.x)
-	var text = "YOU WIN\n-\nCLICK TO START OVER";
-	var style = {font: "60px Arial", fill: "#ff0044", align: "center"};
-	var t = game.add.text(0,0,text,style);
-	t.fixedToCamera = true;
-	t.cameraOffset.setTo(60,200);
+	if (player.x > game.world.width && winstate == 0){
+		var text = "YOU WIN\n-\nCLICK TO START OVER";
+		var style = {font: "60px Arial", fill: "#ff0044", align: "center"};
+		var t = game.add.text(0,0,text,style);
+		t.fixedToCamera = true;
+		t.cameraOffset.setTo(60,200);
+		winstate = 1;
+		player.kill();
+	}
+}
+
+function lose(){
+	if (player.y > game.world.height && losestate == 0){
+		var text = "YOU LOSE\n-\nCLICK TO START OVER";
+		var style = {font: "60px Arial", fill: "#ff0044", align: "center"};
+		var t = game.add.text(0,0,text,style);
+		t.fixedToCamera = true;
+		t.cameraOffset.setTo(60,200);
+		losestate = 1;
+		player.kill();
+	}
+}
+
+function restart(){
+	window.location.reload();
 }
 	
 </script>
