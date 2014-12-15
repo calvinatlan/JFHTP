@@ -12,6 +12,8 @@ var game = new Phaser.Game(800,600, Phaser.AUTO, 'JFHTP', {preload: preload, cre
 function preload() {
 	game.load.image('sky','assets/sky.png');
 	game.load.image('ground', 'assets/platform.png');
+	game.load.image('wall', 'assets/wall.png');
+	game.load.image('bit', 'assets/platform_break.png');
     game.load.spritesheet('dude','assets/dude.png',32,48);
 }
 
@@ -23,6 +25,8 @@ winstate = 0;
 losestate = 0;
 punching = 0;
 punchTimer = 0;
+nmove = 0;
+rpunch = 0;
 
 function create() {
 
@@ -54,15 +58,18 @@ function create() {
 	walls = game.add.group();
 	walls.enableBody = true;
 
-	var wall = walls.create(300, game.world.height - 300, 'ground');
+	var wall = walls.create(600, game.world.height - 425, 'wall');
 	wall.immovable = true;
 	wall.anchor.setTo(0.5,0.5);
-	wall.rotation = (wall.x,wall.y,Math.PI/2);
+	wall = walls.create(1200, game.world.height - 500, 'wall');
+	wall.immovable = true;
+	wall.anchor.setTo(0.5,0.5);
 
-	/*ground = platforms.create(400, game.world.height - 250, 'ground');
+	//Wall break section
+	emitter = game.add.emitter(0, 0, 100);
 
-	ground.body.immovable = true;*/
-
+    emitter.makeParticles('bit');
+    emitter.gravity = 200;
 
 	//Create player
 	player = game.add.sprite(10,game.world.height-200,'dude');
@@ -81,9 +88,14 @@ function create() {
 
 	//Create controls
 	spaceKey = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
+	cursors = game.input.keyboard.createCursorKeys();
 
 	//Camera
+	follow_spr = game.add.sprite(400, 0, null);
+	game.physics.arcade.enable(follow_spr);
+
 	game.camera.follow(player, Phaser.Camera.FOLLOW_PLATFORMER);
+	//game.camera.follow(follow_spr);
 
 
 }
@@ -93,16 +105,29 @@ function update(){
 	game.physics.arcade.collide(player, platforms);
 	playerAccel(2, 200);
 	if (player.body.velocity.x > 0) player.animations.play('right');
-	//spaceKey.onDown.add(jump, this);
+	spaceKey.onDown.add(next_move, this);
 	punch();
 
 	win();
 	if(player.y > game.world.height )lose();
-	game.physics.arcade.overlap(player, walls, lose, null, this);
+	game.physics.arcade.overlap(player, walls, wall_break, null, this);
 
 	if (winstate == 1 || losestate == 1){ 
 		spaceKey.onDown.add(restart,this);
 	}
+
+	follow_spr.body.velocity.x = 0;
+ 
+    if (cursors.left.isDown)
+    {
+        //  Move to the left
+        follow_spr.body.velocity.x = -350;
+    }
+    else if (cursors.right.isDown)
+    {
+        //  Move to the right
+        follow_spr.body.velocity.x = 350;
+    }
 }
 
 function render(){
@@ -123,7 +148,7 @@ function jump(){
 }
 
 function punch(){
-	if (punching == 0 && spaceKey.isDown && punchTimer == 0){
+	if (punching == 0 && spaceKey.isDown && punchTimer == 0 && rpunch == 1){
 		punching = 1; punchTimer = 100; player.anchor.setTo(0,0.5);
 	}else if(punching == 1){
 		player.scale.x+=.1;
@@ -135,6 +160,28 @@ function punch(){
 		}
 	}
 	if (punchTimer > 0) punchTimer--;
+}
+
+function next_move(){
+	if (nmove == 0){
+		rpunch = 0;
+		jump();
+		nmove = (nmove+1)%2;
+	}else{
+		rpunch = 1;
+		nmove = (nmove+1)%2;
+	}
+}
+
+function wall_break(player,walls){
+	if(punching==0){
+		lose();
+	}else{	
+		emitter.x = walls.x;
+		emitter.y = walls.y;
+		walls.kill();
+		emitter.start(true,2000,null,20);
+	}
 }
 
 function win(){
