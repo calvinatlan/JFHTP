@@ -13,6 +13,8 @@ function preload() {
 	game.load.image('sky','assets/sky.png');
 	game.load.image('ground', 'assets/platform.png');
 	game.load.image('wall', 'assets/wall.png');
+	game.load.image('punch', 'assets/punch.png');
+	game.load.image('jump', 'assets/jump.png');
 	game.load.image('bit', 'assets/platform_break.png');
     game.load.spritesheet('dude','assets/dude.png',32,48);
 }
@@ -21,16 +23,16 @@ var player;
 var platforms;
 var walls;
 var cursors;
+var button1; var button2;
 winstate = 0;
 losestate = 0;
 punching = 0;
 punchTimer = 0;
-nmove = 0;
+nmove = -1;
 rpunch = 0;
+movepos = 0;
 
 function create() {
-
-
 
 	//Add tileSprite background
 	game.add.tileSprite(0, 0, 1600, 600, 'sky');
@@ -86,6 +88,10 @@ function create() {
 
 	player.frame = 4;
 
+	//Buttons
+	button1 = game.add.button(264, 264, 'jump', add_move, this);
+	button2 = game.add.button(464,264, 'punch', add_move, this);
+
 	//Create controls
 	spaceKey = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
 	cursors = game.input.keyboard.createCursorKeys();
@@ -94,8 +100,7 @@ function create() {
 	follow_spr = game.add.sprite(400, 0, null);
 	game.physics.arcade.enable(follow_spr);
 
-	game.camera.follow(player, Phaser.Camera.FOLLOW_PLATFORMER);
-	//game.camera.follow(follow_spr);
+	game.camera.follow(follow_spr);
 
 
 }
@@ -103,7 +108,7 @@ function create() {
 function update(){
 	
 	game.physics.arcade.collide(player, platforms);
-	playerAccel(2, 200);
+	if (nmove != -1) playerAccel(2, 200);
 	if (player.body.velocity.x > 0) player.animations.play('right');
 	spaceKey.onDown.add(next_move, this);
 	punch();
@@ -149,7 +154,7 @@ function jump(){
 
 function punch(){
 	if (punching == 0 && spaceKey.isDown && punchTimer == 0 && rpunch == 1){
-		punching = 1; punchTimer = 100; player.anchor.setTo(0,0.5);
+		punching = 1; punchTimer = 20; player.anchor.setTo(0,0.5);
 	}else if(punching == 1){
 		player.scale.x+=.1;
 		if (player.scale.x >= 1.5) punching = 2;
@@ -163,7 +168,12 @@ function punch(){
 }
 
 function next_move(){
-	if (nmove == 0){
+	if (nmove == -1){
+		nmove = 0;
+		game.camera.follow(player, Phaser.Camera.FOLLOW_PLATFORMER);
+		button1.kill();
+		button2.kill();
+	}else if(nmove == 0){
 		rpunch = 0;
 		jump();
 		nmove = (nmove+1)%2;
@@ -171,6 +181,12 @@ function next_move(){
 		rpunch = 1;
 		nmove = (nmove+1)%2;
 	}
+}
+
+function add_move(move){
+	newmove = game.add.sprite(movepos*64,600-64,move.key);
+	newmove.fixedToCamera = true;
+	movepos++;
 }
 
 function wall_break(player,walls){
