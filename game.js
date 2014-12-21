@@ -1,15 +1,16 @@
-var game = new Phaser.Game(800,600, Phaser.AUTO, 'JFHTP', {preload: preload, create: create, update: update, render: render});
+/*
+"Jeff Forgot How To Platform"
+by Calvin Atlan
 
-function preload() {
-	game.load.image('sky','assets/sky.png');
-	game.load.image('ground', 'assets/platform.png');
-	game.load.image('wall', 'assets/wall.png');
-	game.load.image('punch', 'assets/punch.png');
-	game.load.image('jump', 'assets/jump.png');
-	game.load.image('bit', 'assets/platform_break.png');
-    game.load.spritesheet('dude','assets/dude.png',32,48);
-}
+Main Game Code
+*/
 
+//Game initialization
+var game = new Phaser.Game(800,600, Phaser.AUTO, 'JFHTP', {preload: preload, create: create, update: update});
+
+/*-----------------------------
+Important variable declarations
+------------------------------*/
 var player;
 var platforms;
 var walls;
@@ -23,6 +24,22 @@ nmove = -1;
 rpunch = 0;
 movepos = 0;
 
+/*-------------------
+Main State Functions
+-------------------*/
+
+function preload() {
+
+	game.load.image('sky','assets/sky.png');
+	game.load.image('ground', 'assets/platform.png');
+	game.load.image('wall', 'assets/wall.png');
+	game.load.image('punch', 'assets/punch.png');
+	game.load.image('jump', 'assets/jump.png');
+	game.load.image('bit', 'assets/platform_break.png');
+    game.load.spritesheet('dude','assets/dude.png',32,48);
+
+}
+
 function create() {
 
 	//Add tileSprite background
@@ -31,10 +48,46 @@ function create() {
 	//Set bounds for camera usage
 	game.world.setBounds(0,0, 1600, 600);
 
-		//Initialize Physics
+	//Initialize Physics
 	game.physics.startSystem(Phaser.Physics.ARCADE);
 
+	levelInit();
+	playerInit();
+	controlInit();
+
+}
+
+function update(){
 	
+	//Player control code
+	game.physics.arcade.collide(player, platforms);
+	if (nmove != -1) playerAccel(2, 200);
+	if (player.body.velocity.x > 0) player.animations.play('right');
+	spaceKey.onDown.add(next_move, this);
+	punch();
+	win();
+	if(player.y > game.world.height )lose();
+	game.physics.arcade.overlap(player, walls, wall_break, null, this);
+
+
+	//Camera Control Code
+	follow_spr.body.velocity.x = 0;
+ 	if (cursors.left.isDown) follow_spr.body.velocity.x = -350;
+    else if (cursors.right.isDown) follow_spr.body.velocity.x = 350;
+
+
+    //Restart Level
+	if (winstate == 1 || losestate == 1) spaceKey.onDown.add(restart,this);
+	
+}
+
+/*----------------------
+Level Creation Functions
+-----------------------*/
+
+//Creates the level (platforms and walls)
+function levelInit(){
+
 	//Create platforms
 	platforms = game.add.group();
 
@@ -47,6 +100,7 @@ function create() {
 	ground = addPlatform(ground, 400, 250);
 	ground = addPlatform(ground, 1000, 300);
 
+
 	//Create Walls
 	walls = game.add.group();
 	walls.enableBody = true;
@@ -58,13 +112,18 @@ function create() {
 	wall.immovable = true;
 	wall.anchor.setTo(0.5,0.5);
 
-	//Wall break section
+
+	//Wall break code
 	emitter = game.add.emitter(0, 0, 100);
 
     emitter.makeParticles('bit');
     emitter.gravity = 200;
 
-	//Create player
+}
+
+//Player creation
+function playerInit(){
+
 	player = game.add.sprite(10,game.world.height-200,'dude');
 	player.anchor.setTo(0.5,0.5);
 
@@ -78,6 +137,11 @@ function create() {
 	player.animations.add('right', [5, 6, 7, 8], 10, true);
 
 	player.frame = 4;
+
+}
+
+//Buttons, controls and camera object initialization
+function controlInit(){
 
 	//Buttons
 	button1 = game.add.button(264, 264, 'jump', add_move, this);
@@ -93,50 +157,24 @@ function create() {
 
 	game.camera.follow(follow_spr);
 
-
 }
 
-function update(){
-	
-	game.physics.arcade.collide(player, platforms);
-	if (nmove != -1) playerAccel(2, 200);
-	if (player.body.velocity.x > 0) player.animations.play('right');
-	spaceKey.onDown.add(next_move, this);
-	punch();
-
-	win();
-	if(player.y > game.world.height )lose();
-	game.physics.arcade.overlap(player, walls, wall_break, null, this);
-
-	if (winstate == 1 || losestate == 1){ 
-		spaceKey.onDown.add(restart,this);
-	}
-
-	follow_spr.body.velocity.x = 0;
- 
-    if (cursors.left.isDown)
-    {
-        //  Move to the left
-        follow_spr.body.velocity.x = -350;
-    }
-    else if (cursors.right.isDown)
-    {
-        //  Move to the right
-        follow_spr.body.velocity.x = 350;
-    }
-}
-
-function render(){
-}
-
-function playerAccel(x, y){
-	if (player.alive && player.body.velocity.x < y) player.body.velocity.x += x;
-}
-
+//Creates a platform x pixels from the left side of the world, and y pixels from the bottom of the world (to account for the y axis reversal convention)
 function addPlatform(ground, x, y){
+
 	ground = platforms.create(x, game.world.height - y, 'ground');
 	ground.body.immovable = true;
 	return ground;
+
+}
+
+/*---------------------------
+Player controlling functions
+----------------------------*/
+
+//Adds x pixels/second to the velocity of the player per call until he reaches y pixels/second
+function playerAccel(x, y){
+	if (player.alive && player.body.velocity.x < y) player.body.velocity.x += x;
 }
 
 function jump(){
@@ -144,6 +182,7 @@ function jump(){
 }
 
 function punch(){
+
 	if (punching == 0 && spaceKey.isDown && punchTimer == 0 && rpunch == 1){
 		punching = 1; punchTimer = 20; player.anchor.setTo(0,0.5);
 	}else if(punching == 1){
@@ -156,9 +195,29 @@ function punch(){
 		}
 	}
 	if (punchTimer > 0) punchTimer--;
+
 }
 
+//Kills the wall the player ran into and moves the broken wall emitter to that position
+function wall_break(player,walls){
+
+	if(punching==0){
+		lose();
+	}else{	
+		emitter.x = walls.x;
+		emitter.y = walls.y;
+		walls.kill();
+		emitter.start(true,2000,null,20);
+	}
+
+}
+
+/*-------------------------
+Custom Algorithm Functions
+-------------------------*/
+
 function next_move(){
+
 	if (nmove == -1){
 		nmove = 0;
 		game.camera.follow(player, Phaser.Camera.FOLLOW_PLATFORMER);
@@ -172,26 +231,24 @@ function next_move(){
 		rpunch = 1;
 		nmove = (nmove+1)%2;
 	}
+
 }
 
+//Adds the selected move's icon to the bottom of the screen
 function add_move(move){
+
 	newmove = game.add.sprite(movepos*64,600-64,move.key);
 	newmove.fixedToCamera = true;
 	movepos++;
+
 }
 
-function wall_break(player,walls){
-	if(punching==0){
-		lose();
-	}else{	
-		emitter.x = walls.x;
-		emitter.y = walls.y;
-		walls.kill();
-		emitter.start(true,2000,null,20);
-	}
-}
+/*---------------------------
+Win/Lose Condition Functions
+---------------------------*/
 
 function win(){
+
 	if (player.x > game.world.width && winstate == 0){
 		var text = "YOU WIN\n-\nCLICK TO START OVER";
 		var style = {font: "60px Arial", fill: "#ff0044", align: "center"};
@@ -201,9 +258,11 @@ function win(){
 		winstate = 1;
 		player.kill();
 	}
+
 }
 
 function lose(){
+
 	if (losestate == 0){
 		var text = "YOU LOSE\n-\nCLICK TO START OVER";
 		var style = {font: "60px Arial", fill: "#ff0044", align: "center"};
@@ -213,6 +272,7 @@ function lose(){
 		losestate = 1;
 		player.kill();
 	}
+
 }
 
 function restart(){
