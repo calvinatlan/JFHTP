@@ -36,7 +36,7 @@ function preload() {
 	game.load.image('punch', 'assets/punch.png');
 	game.load.image('jump', 'assets/jump.png');
 	game.load.image('bit', 'assets/platform_break.png');
-    game.load.spritesheet('dude','assets/dude.png',32,48);
+ 	game.load.spritesheet('dude','assets/dude.png',32,48);
 
 }
 
