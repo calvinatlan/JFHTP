@@ -73,10 +73,10 @@ function update(){
 	//Camera Control Code
 	follow_spr.body.velocity.x = 0;
  	if (cursors.left.isDown) follow_spr.body.velocity.x = -350;
-    else if (cursors.right.isDown) follow_spr.body.velocity.x = 350;
+    	else if (cursors.right.isDown) follow_spr.body.velocity.x = 350;
 
 
-    //Restart Level
+    	//Restart Level
 	if (winstate == 1 || losestate == 1) spaceKey.onDown.add(restart,this);
 	
 }
@@ -116,8 +116,8 @@ function levelInit(){
 	//Wall break code
 	emitter = game.add.emitter(0, 0, 100);
 
-    emitter.makeParticles('bit');
-    emitter.gravity = 200;
+    	emitter.makeParticles('bit');
+	emitter.gravity = 200;
 
 }
 
